@@ -1,0 +1,533 @@
+/**
+ * @file functions.cpp
+ * @brief Implementation of the project functions
+ * @author Ronan Champagnat - IUT Informatique La Rochelle
+ * @date 10/11/2023
+ */
+
+#include "typeDef.h"
+#include "functions.h"
+
+#include <iostream>
+#include <fstream>
+
+using namespace std;
+
+
+/*
+ * Chronographe functions
+ */
+
+/**
+ * @brief Retourne l'heure courante avec une grande résolution
+ */
+chrono::time_point<std::chrono::high_resolution_clock> getTime()
+{
+    return chrono::high_resolution_clock::now();
+}
+
+/**
+ * @brief Retourne la différence entre deux heures données et convertit en secondes.
+ */
+double calculateDuration(chrono::time_point<std::chrono::high_resolution_clock> start, chrono::time_point<std::chrono::high_resolution_clock> end)
+{
+    return (double)chrono::duration_cast<chrono::nanoseconds>(end - start).count() / 1000000000;
+}
+
+
+/*
+ * Utility functions
+ */
+
+/**
+ * @brief Ouvre le fichier passer en paramètres et le parcours intégralement en comptant le nombre
+ * de ligne. Le fichier est fermé avant de retourner le nombre de lignes trouvé.
+ */
+int nbOfLines(string aFileName)
+{
+    ifstream iFile(aFileName);
+    if (iFile.is_open())
+    {
+        int nbLines = 0;
+        while (!iFile.eof())
+        {
+            iFile.ignore(256,'\n');
+            nbLines++;
+        }
+        return nbLines;
+    }
+    else
+    {
+        cout<<"erreur d'ouverture du fichier"<<endl;
+        return 0;
+    }
+}
+
+/**
+ * @brief Affiche une barre de progression au format :
+ * [############                  ] 42%
+ * Utilisation de \r (voir premier cours de Dév)
+ * le nombre de # est proportionnel nb (nombre d'itérations) par rapport à max
+ * le pourcentage est la proportion de nb sur max
+ */
+void printProgressBar(int nb, int max)
+{
+    string out = "";
+    int prct;
+    prct = nb * 100 / max;
+    int nbBarre = prct * 0.3;
+    for (int i=0; i<nbBarre; i++)
+    {
+        out += "#"; //optimisation en mettant '#' au lieu de "#" ?
+    }
+    for (int i=0; i<(30-nbBarre); i++)
+    {
+        out += " ";
+    }
+    if (prct != 100)
+        cout<<"\r["<<out<<"] "<<prct<<'%';
+    else
+        cout<<"\r["<<out<<"] "<<prct<<'%'<<endl;
+}
+
+
+/*
+ * Utility functions for data structure
+ */
+
+/**
+ * @brief Parcours une liste de type Process afin de libérer la mémoire de toutes les activités
+ * puis libère la mémoire de la liste de type Process
+ * Chaque élément libéré est mis à pointer sur nullpointer
+ */
+void clear(Process * aList)
+{
+    if (aList->firstActivity != nullptr)
+    {
+        Activity * del = aList->firstActivity;
+        while (del->nextActivity != nullptr) {
+            aList->firstActivity = del->nextActivity;
+            delete del;
+            del = aList->firstActivity;
+        }
+        delete del;
+        del = nullptr;
+        aList->firstActivity = nullptr;
+    }
+}
+
+/**
+ * @brief Parcours tous les processus d'une liste et applique clear sur chaque processus
+ * puis libère la mémoire de la liste et fait pointer la liste sur nullptr
+ */
+void clear(ProcessList * aList)
+{
+    if (aList->firstProcess != nullptr)
+    {
+        Process * del = aList->firstProcess;
+        while (del->nextProcess != nullptr) {
+            aList->firstProcess = del->nextProcess;
+            clear(del);
+            delete del;
+            del = aList->firstProcess;
+        }
+        clear(del);
+        delete del;
+        del = nullptr;
+        aList->firstProcess = nullptr;
+        aList->size = 0;
+    }
+}
+
+/**
+ * @brief Affiche le nombre d'activité contenu dans le process
+ * puis parcours toutes les activités pour les afficher (nom uniquement)
+ * comme suit : Nb activités : 3: a b c \n
+ */
+void displayActivitiesList(Process * aProcess)
+{
+    if (aProcess->firstActivity != nullptr)
+    {
+        string out = "";
+        Activity *ptr = aProcess->firstActivity;
+        for (int i = 0; i < aProcess->nbActivities; ++i) {
+            out += ptr->name + ' ';
+            ptr = ptr->nextActivity;
+        }
+        cout<<"Nb activités : "<<aProcess->nbActivities<<": "<<out<<endl;
+    }
+    else
+        cout<<"Nb activités : 0: "<<endl;
+}
+
+/**
+ * @brief Affiche le nombre de processus contenus dans une liste puis parcours la liste
+ * pour afficher l'id de chaque processus et ses activités (utilise displayActivitiesList)
+ * comme suit : Nombre de processus : 3\n123:\tNb activités : 3: a b c \n456:\tNb activités : 1: b \n789:\tNb activités : 2: a b \n\n
+ */
+void displayProcessesList(ProcessList * aList) //on connait toute les taille -> il est inutile de parcourir jusqu'à != nullptr; de plus, il ne prend pas le dernier en compte donc éviter
+{
+    if (aList->firstProcess == nullptr)
+    {
+        cout<<"Nombre de processus : 0"<<endl;
+    }
+    else
+    {
+        cout<<"Nombre de processus : "<<aList->size<<endl;
+        Process * actual = aList->firstProcess;
+        for (int i = 0; i < aList->size; ++i) {
+            cout<<actual->id<<":\t";
+            displayActivitiesList(actual);
+            actual = actual->nextProcess;
+        }
+        cout<<endl;
+    }
+}
+
+/**
+ * @brief Si la liste le processus ne contient aucune activité, l'activité est ajouté en tête
+ * sinon la liste des activités est parcourue et l'activité est ajoutée en queue.
+ * Le nombre d'activités du processus est incrémenté de 1
+ */
+void push_back(Process * aProcess, Activity* anActivity)
+{
+    cout<<"# Lancement de push_back #"<<endl;
+    if (aProcess->firstActivity == nullptr)
+        aProcess->firstActivity = anActivity;
+    else
+    {
+        Activity * tracker = aProcess->firstActivity;
+        while (tracker->nextActivity != nullptr)
+            tracker = tracker->nextActivity;
+        tracker->nextActivity = anActivity;
+    }
+    aProcess->nbActivities++;
+    cout<<"# Fin de push_back #"<<endl;
+
+}
+
+/**
+ * @brief Construit un pointeur de type Activity et l'initialise au valeurs données
+ * puis utilise push_back pour ajouter l'activité à la fin de la liste (au processus)
+ */
+void addActivity(Process * aProcess, string anActivityName, string aTime)
+{
+    Activity *anActivity = new Activity;
+    anActivity->name = anActivityName;
+    anActivity->time = aTime;
+    push_back(aProcess, anActivity);
+}
+
+/**
+ * @brief Ajoute un processus (Process) en tête de liste ProcessList
+ */
+void push_front(ProcessList * aList, Process * aProcess)
+{
+    if (aList->firstProcess == nullptr)
+        aList->firstProcess = aProcess;
+    else
+    {
+        Process * tracker = aList->firstProcess;
+        aList->firstProcess = aProcess;
+        aProcess->nextProcess = tracker;
+    }
+    aList->size++;
+}
+
+/**
+ * @brief Construit un pointeur de type Process, positionne le champ id à la valeur donnée
+ * puis utilise addActivity pour ajouter l'activité passée en paramètre au processus créé
+ * puis utilise push_front pour ajouter le processus à la liste de processus
+ */
+void addProcess(ProcessList * aList, int aProcessId, string anActivityName, string aTime)
+{
+    Process *aProcess = new Process;
+    aProcess->id = aProcessId;
+    addActivity(aProcess, anActivityName, aTime);
+    push_front(aList, aProcess);
+}
+
+/**
+ * @brief Parcours la liste des processus
+ * quand le processus est trouvé (comparaison des id à aProcessID) on utilise addActivity pour ajouter
+ * l'activité donnée au processus trouvé
+ */
+void insertProcessActivity(ProcessList * aList, int aProcessId, string anActivityName, string aTime)
+{
+    if (aList->size != 0)
+    {
+        Process * processPtr = aList->firstProcess;
+        while (processPtr->id != aProcessId && processPtr->nextProcess != nullptr) //tant que l'ID est différent et que le suivant existe, on parcours
+        {
+            processPtr = processPtr->nextProcess;
+        }
+        if (processPtr->nextProcess == nullptr) //si le processus n'est pas trouvé, on le crée
+            addProcess(aList,aProcessId,anActivityName,aTime);
+        else
+            addActivity(processPtr,anActivityName,aTime); //sinon, on ajoute l'activité au processus lié
+    }
+    else
+        addProcess(aList,aProcessId,anActivityName,aTime); //si aucun processus n'existe, on le crée
+}
+
+/**
+ * @brief Parcours la liste des processus
+ * Si un processus correspond au process Id donné retourner un pointeur vers ce processus
+ * retourne nullptr sinon
+ */
+Process * processExists(ProcessList * aList, int aProcessId)
+{
+    if (aList->size == 0)
+        return nullptr;
+    else
+    {
+        Process * processPtr = aList->firstProcess;
+        while (processPtr->id != aProcessId && processPtr->nextProcess != nullptr) //tant que l'ID est différent et que le suivant existe, on parcours
+        {
+            processPtr = processPtr->nextProcess;
+        }
+        if (processPtr->nextProcess == nullptr) //si le processus n'est pas trouvé, on renvoie nullptr
+            return nullptr;
+        else
+            return processPtr;                  //sinon, on retourne le pointeur
+    }
+}
+
+
+/*
+ * Processes Functions
+ */
+
+/**
+ * @brief Affiche la taille du fichier à analyser (en utilisant nbOfLines)
+ * Puis parcours le fichier
+ * met à jour la barre de progression en utilisant pringProgressBar
+ * utilise cin pour récupérer l'identifiant du processus, le nom de l'activité et la date de l'activité
+ * si le processus existe (id déjà présent, pour cela on utilise processExist)
+ * l'activité est ajoutée au processus trouvé en utilisant insertProcessActivity
+ * ajoute le processus à la liste des processus sinon en utilisant addProcess
+ * Ne pas oublier de fermer le fichier
+ */
+void extractProcesses(ProcessList* aList, string aFileName)
+{
+    int nbLines = nbOfLines(aFileName);
+    int nb100Lines = nbLines/100 + 1;
+    cout<<"Début de l'analyse du fichier, "<<nbLines<<" lignes trouvés"<<endl;
+    ifstream iFile(aFileName);
+    if (iFile.is_open())
+    {
+        int id;
+        string name;
+        string time;
+        Process * ptr;
+        int iteration = 0;
+        while (!iFile.eof())
+        {
+            iteration++;
+            if (iteration % nb100Lines == 0)
+                printProgressBar(iteration, nbLines);
+            if (iFile >> id >> name >> time)
+            {
+                ptr = processExists(aList, id);
+                //cout<<id<<name<<time<<"/"<<ptr<<endl;
+                if (ptr != nullptr)
+                {
+                    insertProcessActivity(aList, id, name, time);
+                }
+                else
+                {
+                    addActivity(ptr, name, time);
+                }
+            }
+            else
+                cout<<"Erreur de lecture du fichier"<<endl;
+        }
+        printProgressBar(iteration, nbLines);
+    }
+    else
+    {
+        cout<<"Erreur d'ouverture du fichier"<<endl;
+    }
+    iFile.close();
+}
+
+/**
+ * @brief Initialise une variable somme
+ * Parcours la liste des processus puis ajoute le nombre d'activité de chaque processus
+ * à la variable somme
+ * retourne la moyenne somme/nombre de processus en réel
+ */
+double averageProcessLength(ProcessList * aList)
+{
+    double sum = 0;
+    double nbProcess = 0;
+    if (aList->size != 0)
+    {
+        Process * processPtr = aList->firstProcess;
+        while (processPtr->nextProcess != nullptr) {
+            sum += processPtr->nbActivities;
+            nbProcess++;
+            processPtr = processPtr->nextProcess;
+        }
+        sum += processPtr->nbActivities;
+        nbProcess++;
+    }
+    return sum / nbProcess;
+}
+
+/**
+ * @brief Insère une activité dans un processus en respectant l'ordre croissant sur le nom des activités
+ * et à condition que le nom de l'activité n'existe pas déjà
+ */
+void insertActivity(Process * aProcess, Activity* anActivity)
+{
+    aProcess->nbActivities++;
+    if (aProcess->firstActivity != nullptr)
+    {
+        Activity * activityPtr = aProcess->firstActivity;
+        if (anActivity->name < activityPtr->name)   //si plus grand que la première activité
+        {
+            anActivity->nextActivity = aProcess->firstActivity;
+            aProcess->firstActivity = anActivity;
+        }
+        else if (anActivity->name == activityPtr->name)  //si identique
+        {
+            aProcess->nbActivities--;
+        }
+        else    //si plus petit que première activité
+        {
+            if (activityPtr->nextActivity == nullptr) //si suivant n'existe pas, mettre l'activité en suivant
+                activityPtr->nextActivity = anActivity;
+            else
+            {
+                while (anActivity->name > activityPtr->nextActivity->name && activityPtr->nextActivity->nextActivity != nullptr) //tant que le nom est plus petit et que le suivant existe, on parcours
+                {
+                    activityPtr = activityPtr->nextActivity;
+                }
+                if (anActivity->name < activityPtr->nextActivity->name)  //si l'activité est plus petite
+                {
+                    anActivity->nextActivity = activityPtr->nextActivity;   //on racroche le suivant à notre activité
+                    activityPtr->nextActivity = anActivity;                 //on ajoute notre activité à la liste
+                }
+                else if (anActivity->name == activityPtr->nextActivity->name)   //si identique
+                {
+                    aProcess->nbActivities--;
+                }
+                else if (activityPtr->nextActivity->nextActivity == nullptr)
+                    activityPtr->nextActivity->nextActivity = anActivity;   //si le suivant n'existe pas, on ajoute à la fin de la liste
+            }
+        }
+    }
+    else
+        aProcess->firstActivity = anActivity;       //si aucune activité existe, on l'ajoute en premier
+}
+
+/**
+ * @brief Parcours la liste des processus
+ * ajoute la première activité de chaque processus en utilisant
+ * insertActivity (pas de doublons)
+ */
+void startActivities(ProcessList * aProcessList, Process * anActivityList)
+{
+    if (aProcessList->size != 0) //si processList non-vide
+    {
+        Process * processPtr = aProcessList->firstProcess;
+        while (processPtr->nextProcess != nullptr) {       //tant que l'élément suivant existe : ajouté la première activité à activityList et passer au suivant;
+            insertActivity(anActivityList,processPtr->firstActivity);
+            processPtr = processPtr->nextProcess;
+        }
+        insertActivity(anActivityList,processPtr->firstActivity);
+    }
+}
+
+/**
+ * @brief Parcours la liste des processus
+ * Parcours la liste des activité de chaque processus
+ * ajoute la dernière activité de chaque processus en utilisant
+ * insertActivity (pas de doublons)
+ */
+void endActivities(ProcessList * aProcessList, Process * anActivityList)
+{
+    if (aProcessList->size != 0)
+    {
+        Process * processPtr = aProcessList->firstProcess;
+        Activity * activityPtr = processPtr->firstActivity;
+        while (processPtr->nextProcess != nullptr) {    //tant que l'élément suivant existe : ajouté la dernière activité à activityList et passer au suivant;
+            activityPtr = processPtr->firstActivity;
+            while (activityPtr->nextActivity != nullptr) {
+                activityPtr = activityPtr->nextActivity;
+            }
+            insertActivity(anActivityList,activityPtr);
+            processPtr = processPtr->nextProcess;
+        }
+        insertActivity(anActivityList,activityPtr);
+    }
+}
+
+/**
+ * @brief Parcours la liste des processus
+ * pour chaque processus parcours la liste des activités et la compare avec la liste des activité du processus donné
+ * retourne vrai si un processus identique est trouvé, faux sinon
+ */
+bool processAlreadyExists(ProcessList * aProcessList, Process * aProcess)
+{
+    if (aProcessList->size != 0)
+    {
+        Process * processPtr = aProcessList->firstProcess;
+        Activity * activityPtr = nullptr;
+        Activity * ptrAProcessActivities = nullptr;
+        bool isIdentic = true;
+        while (processPtr->nextProcess != nullptr) //tant que l'élément suivant de la liste de process existe
+        {
+            activityPtr = processPtr->firstActivity;   //reinitialiser les variables de base
+            ptrAProcessActivities = aProcess->firstActivity;
+            isIdentic = true;
+            for (int i = 0; i < aProcess->nbActivities; ++i) {   //parcourir tout les activités en comparant avec le process donné, si différent passé au process suivant
+                if (activityPtr->name != ptrAProcessActivities->name)
+                {
+                    isIdentic = false;
+                    break;
+                }
+            }
+            if (isIdentic == true)
+                return true;
+            else
+                processPtr = processPtr->nextProcess;
+        }
+        return false;
+    }
+    else
+        return false;
+}
+
+/**
+ * @brief Parcours la liste des processus
+ * affiche la barre de progression en utilisant pringProgressBar
+ * pour chaque processus vérifie qu'il n'est pas déjà dans la lite des variants
+ * (utilise processAlreadyExists)
+ * si c'est un nouveau variant créer un nouveau processus
+ * y ajouter toutes les activités en utilisant addActivity
+ * puis utiliser push_front pour ajouter le processus à la liste des variants
+ */
+void variants(ProcessList * aProcessList, ProcessList * aVariant)
+{
+    int nb100process = aProcessList->size/100 + 1;
+    int iteration = 0;
+    cout<<"Début de l'analyse des variants, "<<aProcessList->size<<" processus trouvés"<<endl;
+    for (Process * processPtr = aProcessList->firstProcess; processPtr->nextProcess != nullptr; processPtr = processPtr->nextProcess) {
+        if (iteration % nb100process == 0)
+            printProgressBar(iteration,aProcessList->size);
+        iteration++;
+        if (!processAlreadyExists(aVariant,processPtr))
+        {
+            Process *aProcess = new Process;
+            aProcess->id = processPtr->id;
+            for (Activity * activityPtr = processPtr->firstActivity; activityPtr->nextActivity != nullptr; activityPtr = activityPtr->nextActivity) {
+                addActivity(aProcess, activityPtr->name, 0);
+            }
+            push_front(aVariant, aProcess);
+        }
+    }
+    printProgressBar(aProcessList->size,aProcessList->size);
+    cout<<aVariant->size<<" variants trouvés"<<endl;
+}
