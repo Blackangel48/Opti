@@ -54,6 +54,7 @@ int nbOfLines(string aFileName)
             iFile.ignore(256,'\n');
             nbLines++;
         }
+        nbLines--;
         return nbLines;
     }
     else
@@ -61,6 +62,20 @@ int nbOfLines(string aFileName)
         cout<<"erreur d'ouverture du fichier"<<endl;
         return 0;
     }
+}
+
+void clearConsole() {
+#ifdef _WIN32
+    // Command for Windows
+    if (system("cls") != 0) {
+        std::cerr << "Failed to clear console on Windows.\n";
+    }
+#else
+    // Command for Linux/macOS
+    if (system("clear") != 0) {
+        std::cerr << "Failed to clear console on Unix-like system.\n";
+    }
+#endif
 }
 
 /**
@@ -105,12 +120,11 @@ void clear(Process * aList)
     if (aList->firstActivity != nullptr)
     {
         Activity * del = aList->firstActivity;
-        while (del->nextActivity != nullptr) {
+        while (del != nullptr) {
             aList->firstActivity = del->nextActivity;
             delete del;
             del = aList->firstActivity;
         }
-        delete del;
         del = nullptr;
         aList->firstActivity = nullptr;
     }
@@ -257,11 +271,11 @@ void insertProcessActivity(ProcessList * aList, int aProcessId, string anActivit
     if (aList->size != 0)
     {
         Process * processPtr = aList->firstProcess;
-        while (processPtr->id != aProcessId && processPtr->nextProcess != nullptr) //tant que l'ID est différent et que le suivant existe, on parcours
+        while (processPtr != nullptr && processPtr->id != aProcessId) //tant que l'ID est différent et que le suivant existe, on parcours
         {
             processPtr = processPtr->nextProcess;
         }
-        if (processPtr->nextProcess == nullptr) //si le processus n'est pas trouvé, on le crée
+        if (processPtr == nullptr) //si le processus n'est pas trouvé, on le crée
             addProcess(aList,aProcessId,anActivityName,aTime);
         else
             addActivity(processPtr,anActivityName,aTime); //sinon, on ajoute l'activité au processus lié
@@ -282,11 +296,11 @@ Process * processExists(ProcessList * aList, int aProcessId)
     else
     {
         Process * processPtr = aList->firstProcess;
-        while (processPtr->id != aProcessId && processPtr->nextProcess != nullptr) //tant que l'ID est différent et que le suivant existe, on parcours
+        while (processPtr != nullptr && processPtr->id != aProcessId) //tant que l'ID est différent et que le suivant existe, on parcours
         {
             processPtr = processPtr->nextProcess;
         }
-        if (processPtr->nextProcess == nullptr) //si le processus n'est pas trouvé, on renvoie nullptr
+        if (processPtr == nullptr) //si le processus n'est pas trouvé, on renvoie nullptr
             return nullptr;
         else
             return processPtr;                  //sinon, on retourne le pointeur

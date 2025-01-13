@@ -45,6 +45,15 @@ double calculateDuration(chrono::time_point<std::chrono::high_resolution_clock> 
 int nbOfLines(string aFileName);
 
 /**
+ * @brief Clears the console screen based on the operating system.
+ *
+ * This function clears the console screen by executing system commands specific to the operating system.
+ * On Windows, it uses the "cls" command, while on Linux and macOS, it uses the "clear" command.
+ * If the system command fails, an error message is displayed in the console.
+ */
+void clearConsole();
+
+/**
  * @brief Display a progress bar
  * @param: int, the current value of the progression
  * @param: int, the max value

@@ -24,7 +24,9 @@ void launchProcessAnalysis()
     ProcessList aProcessList;
     aProcessList.size = 0;
     chrono::time_point<std::chrono::high_resolution_clock> startTime = getTime();
-    extractProcesses(aProcessList,/*FileName*/)
+    extractProcesses(&aProcessList,"smallDataset.txt");
+    chrono::time_point<std::chrono::high_resolution_clock> endTime = getTime();
+    cout<<"Processes extract in "<<calculateDuration(startTime,endTime)<<'s'<<endl;
 }
 
 /**
@@ -82,7 +84,36 @@ void launchTests()
     // test_addProcess();
     // test_addActivity();
 
-    test_processExists();
+    //test_processExists();
+
+    string input;
+    void (*testTab[])() = {test_nbOfLines,
+                           test_printProgressBar,
+                           test_displayProcessesList,
+                           test_push_back,
+                           test_addActivity,
+                           test_push_front,
+                           test_addProcess,
+                           test_insertProcessActivity,
+                           test_processExists,
+                           test_averageProcessLength,
+                           test_displayActivitiesList,
+                           test_endActivities,
+                           test_extractProcesses,
+                           test_startActivities,
+                           test_variants,
+                           test_insertActivity,
+                           test_processAlreadyExists
+                           };
+
+    for (int i = 0; i < 17; ++i) {//boucle de validation entre chaque test avec un tableau de pointeur sur les fonctions.
+        clearConsole();
+        (*(testTab[i]))();
+        cout<<endl<<"Passer a la suite?";
+        cin>>input;
+        if (input!="y")
+            break;
+    }
 
     //test_extractProcesses();
     cout << endl << "********** End testing **********" << endl << endl;
