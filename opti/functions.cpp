@@ -117,16 +117,10 @@ void printProgressBar(int nb, int max)
  */
 void clear(Process * aList)
 {
-    if (aList->firstActivity != nullptr)
-    {
+    while (aList->firstActivity != nullptr) {
         Activity * del = aList->firstActivity;
-        while (del != nullptr) {
-            aList->firstActivity = del->nextActivity;
-            delete del;
-            del = aList->firstActivity;
-        }
-        del = nullptr;
-        aList->firstActivity = nullptr;
+        aList->firstActivity = del->nextActivity;
+        delete del;
     }
 }
 
@@ -136,21 +130,14 @@ void clear(Process * aList)
  */
 void clear(ProcessList * aList)
 {
-    if (aList->firstProcess != nullptr)
-    {
+    while (aList->firstProcess != nullptr) {
         Process * del = aList->firstProcess;
-        while (del->nextProcess != nullptr) {
-            aList->firstProcess = del->nextProcess;
-            clear(del);
-            delete del;
-            del = aList->firstProcess;
-        }
+        aList->firstProcess = del->nextProcess;
         clear(del);
         delete del;
-        del = nullptr;
-        aList->firstProcess = nullptr;
-        aList->size = 0;
     }
+    delete aList;
+    aList = nullptr;
 }
 
 /**
@@ -205,7 +192,6 @@ void displayProcessesList(ProcessList * aList) //on connait toute les taille -> 
  */
 void push_back(Process * aProcess, Activity* anActivity)
 {
-    cout<<"# Lancement de push_back #"<<endl;
     if (aProcess->firstActivity == nullptr)
         aProcess->firstActivity = anActivity;
     else
@@ -216,8 +202,6 @@ void push_back(Process * aProcess, Activity* anActivity)
         tracker->nextActivity = anActivity;
     }
     aProcess->nbActivities++;
-    cout<<"# Fin de push_back #"<<endl;
-
 }
 
 /**
@@ -462,19 +446,21 @@ void startActivities(ProcessList * aProcessList, Process * anActivityList)
  */
 void endActivities(ProcessList * aProcessList, Process * anActivityList)
 {
-    if (aProcessList->size != 0)
+    if (aProcessList->firstProcess != nullptr)
     {
         Process * processPtr = aProcessList->firstProcess;
-        Activity * activityPtr = processPtr->firstActivity;
-        while (processPtr->nextProcess != nullptr) {    //tant que l'élément suivant existe : ajouté la dernière activité à activityList et passer au suivant;
+        Activity * activityPtr;
+        while (processPtr != nullptr) { //tant que le processus suivant existe, parcourir les activités jusqu'a la dernière, créer une copie et l'insérer
             activityPtr = processPtr->firstActivity;
             while (activityPtr->nextActivity != nullptr) {
                 activityPtr = activityPtr->nextActivity;
             }
-            insertActivity(anActivityList,activityPtr);
+            Activity *anActivity = new Activity;
+            anActivity->name = activityPtr->name;
+            anActivity->time = activityPtr->time;
+            insertActivity(anActivityList,anActivity);
             processPtr = processPtr->nextProcess;
         }
-        insertActivity(anActivityList,activityPtr);
     }
 }
 
@@ -537,7 +523,7 @@ void variants(ProcessList * aProcessList, ProcessList * aVariant)
             Process *aProcess = new Process;
             aProcess->id = processPtr->id;
             for (Activity * activityPtr = processPtr->firstActivity; activityPtr->nextActivity != nullptr; activityPtr = activityPtr->nextActivity) {
-                addActivity(aProcess, activityPtr->name, 0);
+                addActivity(aProcess, activityPtr->name, "0");
             }
             push_front(aVariant, aProcess);
         }

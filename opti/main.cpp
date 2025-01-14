@@ -75,8 +75,8 @@ void launchTests()
     // displayProcessesList(l);
     // test_displayProcessesList();
     // test_displayActivitiesList();
-    //test_insertActivity();
-    //test_printProgressBar();
+    // test_insertActivity();
+    // test_printProgressBar();
 
 
     // test_push_back();
@@ -84,7 +84,7 @@ void launchTests()
     // test_addProcess();
     // test_addActivity();
 
-    //test_processExists();
+    // test_processExists();
 
     string input;
     void (*testTab[])() = {test_nbOfLines,
@@ -105,15 +105,25 @@ void launchTests()
                            test_insertActivity,
                            test_processAlreadyExists
                            };
-
-    for (int i = 0; i < 17; ++i) {//boucle de validation entre chaque test avec un tableau de pointeur sur les fonctions.
-        clearConsole();
-        (*(testTab[i]))();
-        cout<<endl<<"Passer a la suite?";
+    int i = 0;
+    bool isValid = true;
+    do {  //boucle de validation entre chaque test avec un tableau de pointeur sur les fonctions.
+        cout<<endl<<"Passer a la suite :";
         cin>>input;
-        if (input!="y")
-            break;
-    }
+        if (input=="y" && i<17)
+        {
+            clearConsole();
+            (*(testTab[++i]))();
+        }
+        else if (isdigit(input[0]) && isdigit(input[1]) && stoi(input)<17)//test input = nombre
+        {
+            i = stoi(input);
+            clearConsole();
+            (*(testTab[stoi(input)]))();
+        }
+        else
+            isValid = false;
+    } while (isValid);
 
     //test_extractProcesses();
     cout << endl << "********** End testing **********" << endl << endl;
