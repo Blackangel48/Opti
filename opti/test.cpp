@@ -48,6 +48,7 @@ ProcessList * generateProcessList()
     p->firstActivity->nextActivity->name = "b";
     p->firstActivity->nextActivity->time = "2";
     p->firstActivity->nextActivity->nextActivity = new Activity;
+    //p->lastActivity = p->firstActivity->nextActivity->nextActivity;
     p->firstActivity->nextActivity->nextActivity->name = "c";
     p->firstActivity->nextActivity->nextActivity->time = "3";
     p->firstActivity->nextActivity->nextActivity->nextActivity = nullptr;
@@ -56,6 +57,7 @@ ProcessList * generateProcessList()
     p->id = 456;
     p->nbActivities = 1;
     p->firstActivity = new Activity;
+    //p->lastActivity = p->firstActivity;
     p->firstActivity->name = "b";
     p->firstActivity->time = "4";
     p->firstActivity->nextActivity = nullptr;
@@ -67,6 +69,7 @@ ProcessList * generateProcessList()
     p->firstActivity->name = "a";
     p->firstActivity->time = "5";
     p->firstActivity->nextActivity = new Activity;
+    //p->lastActivity = p->firstActivity->nextActivity;
     p->firstActivity->nextActivity->name = "b";
     p->firstActivity->nextActivity->time = "6";
     p->firstActivity->nextActivity->nextActivity = nullptr;
@@ -89,6 +92,7 @@ ProcessList * generateDuplicateProcessList()
     p->firstActivity->nextActivity->name = "b";
     p->firstActivity->nextActivity->time = "2";
     p->firstActivity->nextActivity->nextActivity = new Activity;
+    //p->lastActivity = p->firstActivity->nextActivity->nextActivity;
     p->firstActivity->nextActivity->nextActivity->name = "c";
     p->firstActivity->nextActivity->nextActivity->time = "3";
     p->firstActivity->nextActivity->nextActivity->nextActivity = nullptr;
@@ -97,23 +101,22 @@ ProcessList * generateDuplicateProcessList()
     p->id = 456;
     p->nbActivities = 1;
     p->firstActivity = new Activity;
+    //p->lastActivity = p->firstActivity;
     p->firstActivity->name = "b";
     p->firstActivity->time = "4";
     p->firstActivity->nextActivity = nullptr;
     l->firstProcess->nextProcess = p;
     p = new Process;
     p->id = 789;
-    p->nbActivities = 3;
+    p->nbActivities = 2;
     p->firstActivity = new Activity;
     p->firstActivity->name = "a";
     p->firstActivity->time = "5";
     p->firstActivity->nextActivity = new Activity;
+    //p->lastActivity = p->firstActivity->nextActivity;
     p->firstActivity->nextActivity->name = "b";
     p->firstActivity->nextActivity->time = "6";
-    p->firstActivity->nextActivity->nextActivity = new Activity;
-    p->firstActivity->nextActivity->nextActivity->name = "c";
-    p->firstActivity->nextActivity->nextActivity->time = "7";
-    p->firstActivity->nextActivity->nextActivity->nextActivity = nullptr;
+    p->firstActivity->nextActivity->nextActivity = nullptr;
     l->firstProcess->nextProcess->nextProcess = p;
     l->firstProcess->nextProcess->nextProcess->nextProcess = nullptr;
     return l;
@@ -568,6 +571,7 @@ void test_insertProcessActivity()
     p->id = 123;
     p->nbActivities = 1;
     p->firstActivity = a;
+    //p->lastActivity = a;
     p->firstActivity->name = "a";
     p->firstActivity->time = "1";
     p->firstActivity->nextActivity = nullptr;
@@ -778,7 +782,9 @@ void test_endActivities()
         cout << RED << "FAIL!" << RESET << " \t: <b, c> activities found" << endl;
         failed++;
     }
+    cout<<"start clearing"<<endl;
     clear(l);
+    cout<<"clearing done"<<endl;
     cout << BLUE << "Totals: " << pass << " passed, " << failed << " failed" << RESET << endl;
     cout << "********* Finished testing of endActivities() *********" << endl;
 }

@@ -225,9 +225,8 @@ void push_front(ProcessList * aList, Process * aProcess)
         aList->firstProcess = aProcess;
     else
     {
-        Process * tracker = aList->firstProcess;
+        aProcess->nextProcess = aList->firstProcess;
         aList->firstProcess = aProcess;
-        aProcess->nextProcess = tracker;
     }
     aList->size++;
 }
@@ -275,20 +274,12 @@ void insertProcessActivity(ProcessList * aList, int aProcessId, string anActivit
  */
 Process * processExists(ProcessList * aList, int aProcessId)
 {
-    if (aList->size == 0)
-        return nullptr;
-    else
+    Process * processPtr = aList->firstProcess;
+    while (processPtr != nullptr && processPtr->id != aProcessId) //tant que l'ID est différent et que le suivant existe, on parcours
     {
-        Process * processPtr = aList->firstProcess;
-        while (processPtr != nullptr && processPtr->id != aProcessId) //tant que l'ID est différent et que le suivant existe, on parcours
-        {
-            processPtr = processPtr->nextProcess;
-        }
-        if (processPtr == nullptr) //si le processus n'est pas trouvé, on renvoie nullptr
-            return nullptr;
-        else
-            return processPtr;                  //sinon, on retourne le pointeur
+        processPtr = processPtr->nextProcess;
     }
+    return processPtr;//si le processus n'est pas trouvé, on renvoie nullptr,sinon, on retourne le pointeur
 }
 
 
@@ -309,7 +300,7 @@ Process * processExists(ProcessList * aList, int aProcessId)
 void extractProcesses(ProcessList* aList, string aFileName)
 {
     int nbLines = nbOfLines(aFileName);
-    int nb100Lines = nbLines/100 + 1;
+    int nb100Lines = nbLines/100 +1;
     cout<<"Début de l'analyse du fichier, "<<nbLines<<" lignes trouvés"<<endl;
     ifstream iFile(aFileName);
     if (iFile.is_open())
@@ -318,23 +309,32 @@ void extractProcesses(ProcessList* aList, string aFileName)
         string name;
         string time;
         Process * ptr;
+        SummaryCell * summaryPtr = nullptr;
         int iteration = 0;
-        while (!iFile.eof())
+        while (iteration != nbLines) //(!iFile.eof())
         {
             iteration++;
             if (iteration % nb100Lines == 0)
                 printProgressBar(iteration, nbLines);
             if (iFile >> id >> name >> time)
             {
-                ptr = processExists(aList, id);
-                //cout<<id<<name<<time<<"/"<<ptr<<endl;
-                if (ptr != nullptr)
+                ptr = processSummaryExists(aList,id);
+                if (ptr == nullptr)  //si le processus n'existe pas
                 {
-                    insertProcessActivity(aList, id, name, time);
+                    summaryPtr = summarySame(aList,id); //on teste si un sommaire du debut de l'id processus existe
+                    if (summaryPtr == nullptr)          //s'il n'existe pas, on crée le processus et le sommaire, et le sommaire pointe vers le processus
+                    {
+                        addProcess(aList,id,name,time);
+                        addSummary(aList,aList->firstProcess);
+                    }
+                    else                                // s'il existe, on crée le processus au bon sommaire(comme un livre à chapitre)
+                    {
+                        addProcessSummary(aList,id,name,time);
+                    }
                 }
-                else
+                else //si le processus existe déjà, on lui ajoute une activité
                 {
-                    addActivity(ptr, name, time);
+                    addActivity(ptr,name,time);
                 }
             }
             else
@@ -530,4 +530,109 @@ void variants(ProcessList * aProcessList, ProcessList * aVariant)
     }
     printProgressBar(aProcessList->size,aProcessList->size);
     cout<<aVariant->size<<" variants trouvés"<<endl;
+}
+
+
+// Functions ADD by the student
+
+void addSummary(ProcessList * aList, Process * aProcess)
+{
+    SummaryCell * aSummaryCell = new SummaryCell;
+    aSummaryCell->id = firstNumberId(aProcess->id);
+    aSummaryCell->firstProcess = aProcess;
+    if (aList->Summary != nullptr) //ajoute le sommaire au début
+    {
+        aSummaryCell->nextSummary = aList->Summary;
+        aList->Summary = aSummaryCell;
+    }
+    else
+        aList->Summary = aSummaryCell;
+    //pushSummaryFront(aList, aProcess);  //si le sommaire du processus n'existe pas, on le créer, on ajoute le process normalement à la liste, et on fait pointer le sommaire vers le process
+}
+
+
+void pushSummaryFront(ProcessList * aList, Process * aProcess)
+{
+    SummaryCell * summary = summarySame(aList, aProcess->id);
+
+    aProcess->nextProcess = summary->firstProcess->nextProcess;
+    summary->firstProcess->nextProcess = aProcess;
+    aList->size++;
+}
+
+
+SummaryCell * summarySame(ProcessList * aList, int aProcessId)
+{
+    SummaryCell * summaryPtr = aList->Summary;
+    int firstNb = firstNumberId(aProcessId);
+    while (summaryPtr != nullptr && summaryPtr->id != firstNb) //tant que l'ID est différent et que le suivant existe, on parcours
+    {
+        summaryPtr = summaryPtr->nextSummary;
+    }
+    return summaryPtr;//si le sommaire n'est pas trouvé, on renvoie nullptr, sinon, on retourne le pointeur
+}
+
+/*
+ * Cherche si le processus existe déjà comme processExists mais voyage par Sommaire(Summary).
+ * Renvoie le pointeur du processus ou nullptr s'il n'existe pas
+ */
+Process * processSummaryExists(ProcessList * aList, int aProcessId)
+{
+    SummaryCell * summary = summarySame(aList, aProcessId);  //crée le pointeur
+    if (summary == nullptr)  //si pas de sommaire
+    {
+        return nullptr;
+    }
+    else
+    {
+        Process * processPtr = summary->firstProcess;  //pointeur de processus
+        //tant que le processus pointé existe et qu'il commence par le même id que le sommaire et qu'il n'existe pas déjà, alors on passe au suivant
+        while (processPtr != nullptr && firstNumberId(processPtr->id) == summary->id && processPtr->id != aProcessId)
+        {
+            processPtr = processPtr->nextProcess;
+        }
+        if (processPtr == nullptr || firstNumberId(processPtr->id) != summary->id)
+        {
+            return nullptr;
+        }
+        else if (processPtr->id == aProcessId) //si processus identique(même), alors on renvoie son adresse
+        {
+            return processPtr;
+        }
+    }
+}
+
+
+int firstNumberId(int aProcessId)
+{
+    int significantNumber = 100000;   //7 chiffre significatif
+    //cout<<"firstNumberOfId :"<<(aProcessId/significantNumber)<<endl;
+    return (aProcessId/significantNumber);
+}
+
+
+/**
+ * @brief Construit un pointeur de type Process, positionne le champ id à la valeur donnée
+ * puis utilise addActivity pour ajouter l'activité passée en paramètre au processus créé
+ * puis utilise push_front pour ajouter le processus à la liste de processus
+ */
+void addProcessSummary(ProcessList * aList, int aProcessId, string anActivityName, string aTime)
+{
+    Process *aProcess = new Process;
+    aProcess->id = aProcessId;
+    addActivity(aProcess, anActivityName, aTime);
+    pushSummaryFront(aList, aProcess);
+}
+
+
+void displaySummary(ProcessList * aList)
+{
+    cout<<"#======# Display #======#"<<endl;
+    SummaryCell * summaryPtr = aList->Summary;
+    while (summaryPtr != nullptr)
+    {
+        cout<<summaryPtr->id<<" -> ";
+        summaryPtr = summaryPtr->nextSummary;
+    }
+    cout<<"nullptr"<<endl<<"#======#   End   #======#"<<endl<<endl;
 }
