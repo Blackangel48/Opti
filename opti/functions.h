@@ -194,5 +194,14 @@ void insertActivity(Process * aProcess, Activity* anActivity);
  */
 bool processAlreadyExists(ProcessList * aProcessList, Process * aProcess);
 
+// Functions ADD by the student
+
+void addSummary(ProcessList * aList, Process * aProcess);
+void pushSummaryFront(ProcessList * aList, Process * aProcess);
+SummaryCell * summarySame(ProcessList * aList, int aProcessId);
+Process * processSummaryExists(ProcessList * aList,  int aProcessId);
+int firstNumberId(int aProcessId);
+void addProcessSummary(ProcessList * aList, int aProcessId, string anActivityName, string aTime);
+void displaySummary(ProcessList * aList);
 
 #endif // FUNCTIONS_H

@@ -42,6 +42,20 @@ struct Process
     Process * nextProcess = nullptr;
 };
 
+
+/*
+ * def of SummaryCell
+ * point on the first process with the same first number of the id
+ * id: the first number of an id
+ */
+struct SummaryCell
+{
+    SummaryCell * nextSummary = nullptr;
+    Process * firstProcess = nullptr;
+    int id = -1;
+};
+
+
 /*
  * Definition of a process list
  */
@@ -49,6 +63,6 @@ struct ProcessList
 {
     int size = 0;
     Process * firstProcess = nullptr;
+    SummaryCell * Summary = nullptr;
 };
-
 #endif // TYPEDEF_H
