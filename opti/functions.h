@@ -195,13 +195,53 @@ void insertActivity(Process * aProcess, Activity* anActivity);
 bool processAlreadyExists(ProcessList * aProcessList, Process * aProcess);
 
 // Functions ADD by the student
-
+/**
+ * @brief addSummary: Crée un sommaire, pointe vers un process puis ce positionne au début de la liste comme un push_front
+ * @param aList ProcessList d'extraction
+ * @param aProcess Le Process pointé
+ */
 void addSummary(ProcessList * aList, Process * aProcess);
+
+/**
+ * @brief pushSummaryFront: ajoute un processus au début du sommaire correspondant
+ * @param aList ProcessList
+ * @param aProcess Le Processus à positionner
+ */
 void pushSummaryFront(ProcessList * aList, Process * aProcess);
+
+/**
+ * @brief summarySame: Renvoie le sommaire correspondant à l'ID passé en paramètre
+ * @param aList ProcessList
+ * @param aProcessId L'ID de référence pour le sommaire
+ * @return renvoie l'adresse du sommaire correspondant
+ */
 SummaryCell * summarySame(ProcessList * aList, int aProcessId);
+
+/**
+ * Cherche si le processus existe déjà dans la liste donné comme processExists mais voyage par Sommaire(Summary).
+ * Renvoie le pointeur du processus ou nullptr s'il n'existe pas
+ */
 Process * processSummaryExists(ProcessList * aList,  int aProcessId);
+
+/**
+ * @brief firstNumberId : Renvoie les premiers chiffres de l'ID donné
+ * @param aProcessId ID donné à manipulé
+ * @return Renvoie les n premiers chiffres de l'ID
+ */
 int firstNumberId(int aProcessId);
+
+/**
+ * @brief Construit un pointeur de type Process, positionne le champ id à la valeur donnée
+ * puis utilise addActivity pour ajouter l'activité passée en paramètre au processus créé
+ * puis utilise push_front par Sommaire pour ajouter le processus à la liste de processus
+ */
 void addProcessSummary(ProcessList * aList, int aProcessId, string anActivityName, string aTime);
+
+/**
+ * @brief displaySummary : Affiche la liste des sommaires créés
+ * @param aList
+ */
 void displaySummary(ProcessList * aList);
+
 
 #endif // FUNCTIONS_H

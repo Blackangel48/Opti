@@ -427,15 +427,11 @@ void insertActivity(Process * aProcess, Activity* anActivity)
  */
 void startActivities(ProcessList * aProcessList, Process * anActivityList)
 {
-    if (aProcessList->size != 0) //si processList non-vide
-    {
         Process * processPtr = aProcessList->firstProcess;
-        while (processPtr->nextProcess != nullptr) {       //tant que l'élément suivant existe : ajouté la première activité à activityList et passer au suivant;
+        while (processPtr != nullptr) {       //tant que l'élément suivant existe : ajouté la première activité à activityList et passer au suivant;
             insertActivity(anActivityList,processPtr->firstActivity);
             processPtr = processPtr->nextProcess;
         }
-        insertActivity(anActivityList,processPtr->firstActivity);
-    }
 }
 
 /**
@@ -471,32 +467,40 @@ void endActivities(ProcessList * aProcessList, Process * anActivityList)
  */
 bool processAlreadyExists(ProcessList * aProcessList, Process * aProcess)
 {
-    if (aProcessList->size != 0)
-    {
         Process * processPtr = aProcessList->firstProcess;
         Activity * activityPtr = nullptr;
         Activity * ptrAProcessActivities = nullptr;
         bool isIdentic = true;
-        while (processPtr->nextProcess != nullptr) //tant que l'élément suivant de la liste de process existe
+        while (processPtr != nullptr) //tant que l'élément de la liste de process existe
         {
-            activityPtr = processPtr->firstActivity;   //reinitialiser les variables de base
-            ptrAProcessActivities = aProcess->firstActivity;
-            isIdentic = true;
-            for (int i = 0; i < aProcess->nbActivities; ++i) {   //parcourir tout les activités en comparant avec le process donné, si différent passé au process suivant
-                if (activityPtr->name != ptrAProcessActivities->name)
-                {
-                    isIdentic = false;
-                    break;
-                }
-            }
-            if (isIdentic == true)
-                return true;
-            else
+            if (processPtr->nbActivities != aProcess->nbActivities)
+            {
                 processPtr = processPtr->nextProcess;
+            }
+            else
+            {
+                activityPtr = processPtr->firstActivity;   //reinitialiser les variables de base
+                ptrAProcessActivities = aProcess->firstActivity;
+                isIdentic = true;
+                for (int i = 0; i < aProcess->nbActivities; ++i)
+                {   //parcourir tout les activités en comparant avec le process donné, si différent passé au process suivant
+                    if (activityPtr->name != ptrAProcessActivities->name)
+                    {
+                        isIdentic = false;
+                        break;
+                    }
+                    else
+                    {
+                        activityPtr = activityPtr->nextActivity;
+                        ptrAProcessActivities = ptrAProcessActivities->nextActivity;
+                    }
+                }
+                if (isIdentic == true)
+                    return true;
+                else
+                    processPtr = processPtr->nextProcess;
+            }
         }
-        return false;
-    }
-    else
         return false;
 }
 
@@ -514,7 +518,9 @@ void variants(ProcessList * aProcessList, ProcessList * aVariant)
     int nb100process = aProcessList->size/100 + 1;
     int iteration = 0;
     cout<<"Début de l'analyse des variants, "<<aProcessList->size<<" processus trouvés"<<endl;
-    for (Process * processPtr = aProcessList->firstProcess; processPtr->nextProcess != nullptr; processPtr = processPtr->nextProcess) {
+    Process * processPtr = aProcessList->firstProcess;
+    while (processPtr->nextProcess != nullptr)
+    {
         if (iteration % nb100process == 0)
             printProgressBar(iteration,aProcessList->size);
         iteration++;
@@ -522,11 +528,12 @@ void variants(ProcessList * aProcessList, ProcessList * aVariant)
         {
             Process *aProcess = new Process;
             aProcess->id = processPtr->id;
-            for (Activity * activityPtr = processPtr->firstActivity; activityPtr->nextActivity != nullptr; activityPtr = activityPtr->nextActivity) {
+            for (Activity * activityPtr = processPtr->firstActivity; activityPtr != nullptr; activityPtr = activityPtr->nextActivity) {
                 addActivity(aProcess, activityPtr->name, "0");
             }
             push_front(aVariant, aProcess);
         }
+        processPtr = processPtr->nextProcess;
     }
     printProgressBar(aProcessList->size,aProcessList->size);
     cout<<aVariant->size<<" variants trouvés"<<endl;
@@ -534,7 +541,11 @@ void variants(ProcessList * aProcessList, ProcessList * aVariant)
 
 
 // Functions ADD by the student
-
+/**
+ * @brief addSummary: Crée un sommaire, pointe vers un process puis ce positionne au début de la liste comme un push_front
+ * @param aList ProcessList d'extraction
+ * @param aProcess Le Process pointé
+ */
 void addSummary(ProcessList * aList, Process * aProcess)
 {
     SummaryCell * aSummaryCell = new SummaryCell;
@@ -547,10 +558,13 @@ void addSummary(ProcessList * aList, Process * aProcess)
     }
     else
         aList->Summary = aSummaryCell;
-    //pushSummaryFront(aList, aProcess);  //si le sommaire du processus n'existe pas, on le créer, on ajoute le process normalement à la liste, et on fait pointer le sommaire vers le process
 }
 
-
+/**
+ * @brief pushSummaryFront: ajoute un processus au début du sommaire correspondant
+ * @param aList ProcessList
+ * @param aProcess Le Processus à positionner
+ */
 void pushSummaryFront(ProcessList * aList, Process * aProcess)
 {
     SummaryCell * summary = summarySame(aList, aProcess->id);
@@ -560,7 +574,12 @@ void pushSummaryFront(ProcessList * aList, Process * aProcess)
     aList->size++;
 }
 
-
+/**
+ * @brief summarySame: Renvoie le sommaire correspondant à l'ID passé en paramètre
+ * @param aList ProcessList
+ * @param aProcessId L'ID de référence pour le sommaire
+ * @return renvoie l'adresse du sommaire correspondant
+ */
 SummaryCell * summarySame(ProcessList * aList, int aProcessId)
 {
     SummaryCell * summaryPtr = aList->Summary;
@@ -572,8 +591,8 @@ SummaryCell * summarySame(ProcessList * aList, int aProcessId)
     return summaryPtr;//si le sommaire n'est pas trouvé, on renvoie nullptr, sinon, on retourne le pointeur
 }
 
-/*
- * Cherche si le processus existe déjà comme processExists mais voyage par Sommaire(Summary).
+/**
+ * Cherche si le processus existe déjà dans la liste donné comme processExists mais voyage par Sommaire(Summary).
  * Renvoie le pointeur du processus ou nullptr s'il n'existe pas
  */
 Process * processSummaryExists(ProcessList * aList, int aProcessId)
@@ -602,11 +621,14 @@ Process * processSummaryExists(ProcessList * aList, int aProcessId)
     }
 }
 
-
+/**
+ * @brief firstNumberId : Renvoie les premiers chiffres de l'ID donné
+ * @param aProcessId ID donné à manipulé
+ * @return Renvoie les n premiers chiffres de l'ID
+ */
 int firstNumberId(int aProcessId)
 {
-    int significantNumber = 100000;   //7 chiffre significatif
-    //cout<<"firstNumberOfId :"<<(aProcessId/significantNumber)<<endl;
+    int significantNumber = 100000;   //3 chiffres significatif (Sommaire de 0 à 999)
     return (aProcessId/significantNumber);
 }
 
@@ -614,7 +636,7 @@ int firstNumberId(int aProcessId)
 /**
  * @brief Construit un pointeur de type Process, positionne le champ id à la valeur donnée
  * puis utilise addActivity pour ajouter l'activité passée en paramètre au processus créé
- * puis utilise push_front pour ajouter le processus à la liste de processus
+ * puis utilise push_front par Sommaire pour ajouter le processus à la liste de processus
  */
 void addProcessSummary(ProcessList * aList, int aProcessId, string anActivityName, string aTime)
 {
@@ -624,7 +646,10 @@ void addProcessSummary(ProcessList * aList, int aProcessId, string anActivityNam
     pushSummaryFront(aList, aProcess);
 }
 
-
+/**
+ * @brief displaySummary : Affiche la liste des sommaires créés
+ * @param aList
+ */
 void displaySummary(ProcessList * aList)
 {
     cout<<"#======# Display #======#"<<endl;

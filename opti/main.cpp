@@ -25,8 +25,43 @@ void launchProcessAnalysis()
     chrono::time_point<std::chrono::high_resolution_clock> endTime = getTime();
     cout<<"Processes extract in "<<calculateDuration(startTime,endTime)<<'s'<<endl;
     cout<<aProcessList->size<<" process add to the processList"<<endl;
-    //displayProcessesList(aProcessList);
-    clear(aProcessList);
+    cout<<"Average process Lenght :"<<averageProcessLength(aProcessList)<<endl;
+
+    cout<<endl<<"Activités de début :"<<endl;
+    Process * activityList = new Process;
+    startActivities(aProcessList,activityList);
+    displayActivitiesList(activityList);
+    clear(activityList);
+
+    cout<<"Activités de fin :"<<endl;
+    Process * activityList2 = new Process;
+    endActivities(aProcessList,activityList2);
+    displayActivitiesList(activityList2);
+    clear(activityList2);
+
+    cout<<endl<<endl;
+    ProcessList * aVariant = new ProcessList;
+    aVariant->size = 0;
+    chrono::time_point<std::chrono::high_resolution_clock> startTime2 = getTime();
+    variants(aProcessList,aVariant);
+    chrono::time_point<std::chrono::high_resolution_clock> endTime2 = getTime();
+    cout<<"Variants extract in "<<calculateDuration(startTime2,endTime2)<<'s'<<endl;
+
+    cout<<endl<<"Activités de début :"<<endl;
+    Process * vActivityList = new Process;
+    startActivities(aVariant,vActivityList);
+    displayActivitiesList(vActivityList);
+    clear(vActivityList);
+
+    cout<<"Activités de fin :"<<endl;
+    Process * vActivityList2 = new Process;
+    endActivities(aVariant,vActivityList2);
+    displayActivitiesList(vActivityList2);
+    clear(vActivityList2);
+
+    cout<<endl<<"Clearing"<<endl;
+    //clear(aVariant);
+    //clear(aProcessList);
 }
 
 /**
@@ -35,7 +70,7 @@ void launchProcessAnalysis()
 */
 void launchTests()
 {
-    cout << endl << "********* Start testing *********" << endl << endl;
+    cout << "********* Start testing *********" << endl << endl;
     string input;
     void (*testTab[])() = {test_nbOfLines,
                            test_printProgressBar,
@@ -73,7 +108,10 @@ void launchTests()
             (*(testTab[stoi(input)]))();
         }
         else
+        {
+            cout<<"Bye, Have a nice day!"<<endl;
             isValid = false;
+        }
     } while (isValid);
 
     cout << endl << "********** End testing **********" << endl << endl;
@@ -86,7 +124,7 @@ void launchTests()
 */
 int main()
 {
-    cout << "Eliott Chauviere A2" << endl;
+    cout << "Eliott Chauviere A2" << endl<<endl;
 
     // Uncomment the line below to run tests
     //launchTests();
